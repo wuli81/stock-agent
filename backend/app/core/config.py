@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     app_name: str = "stock-agent-backend"
-    version: str = "0.1.0"
+    version: str = "1.0.0"
     api_prefix: str = "/api/v1"
     database_url: str = "sqlite:///./data/stock_agent.db"
     api_keys: str = "dev-key"  # 逗号分隔的 API Key

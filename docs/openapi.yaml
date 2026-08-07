@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: stock-agent REST API
   description: A 股自动化交易 Agent 系统后端 API（v0.1）
-  version: 0.1.0
+  version: 1.0.0
 servers:
   - url: http://localhost:8000/api/v1
     description: 本地开发

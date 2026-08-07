@@ -134,7 +134,7 @@ class MainWindow(QMainWindow):
         self.config = config or ExecutorConfig()
         self._worker: PlanWorker | None = None
         self._build_ui()
-        self.setWindowTitle("stock-agent 执行器 v0.4")
+        self.setWindowTitle("stock-agent 执行器 v1.0")
 
     def _build_ui(self) -> None:
         central = QWidget()

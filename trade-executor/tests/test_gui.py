@@ -19,7 +19,7 @@ def test_main_window_offscreen():
     assert app is not None
     win = MainWindow(ExecutorConfig())
     win.show()
-    assert win.windowTitle() == "stock-agent 执行器 v0.4"
+    assert win.windowTitle() == "stock-agent 执行器 v1.0"
     assert win.table.columnCount() == 5
     assert win.table.rowCount() == 0
     assert win.fetch_btn.text() == "拉取计划"

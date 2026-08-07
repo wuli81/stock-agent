@@ -4,4 +4,4 @@ def test_health(client):
     body = resp.json()
     assert body["code"] == 0
     assert body["data"]["status"] == "ok"
-    assert body["data"]["version"] == "0.1.0"
+    assert body["data"]["version"] == "1.0.0"

@@ -1,6 +1,10 @@
 # stock-agent
 
-A 股自动化交易 Agent 系统（v0.1 骨架）
+A 股自动化交易 Agent 系统（v1.0）
+
+[![CI](https://github.com/wuli81/stock-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/wuli81/stock-agent/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](backend/pyproject.toml)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 > ⚠️ 仅供学习研究，不构成投资建议；实盘使用请自行评估风险并遵守当地法律法规。
 
