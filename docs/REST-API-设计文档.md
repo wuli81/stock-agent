@@ -52,6 +52,9 @@
 | POST | /trades | 上报成交（执行器） |
 | GET | /trades?date=&code= | 查询成交记录 |
 | GET | /trades/{trade_id} | 成交详情 |
+| POST | /orders | 上报订单（执行器，幂等） |
+| GET | /orders?date=&code=&status= | 查询订单 |
+| GET | /orders/{order_id} | 订单详情 |
 | GET | /account?date= | 账户与持仓快照 |
 | GET | /daily-reports/{report_date} | 每日报告 |
 | GET | /strategies | 策略列表 |
@@ -175,6 +178,33 @@
 
 ### 4.6 GET /trades/{trade_id}
 单条成交详情，结构同上。
+
+### 4.7 POST /orders
+执行器上报订单（幂等，`client_request_id` 为幂等键，重复上报更新状态）。
+
+请求体：
+```json
+{
+  "client_request_id": "exec-01-20260807-0001",
+  "item_id": 10,
+  "order_no": "BK20260807123456",
+  "code": "600000",
+  "side": "buy",
+  "quantity": 100,
+  "price": 10.75,
+  "status": "filled",
+  "error": null
+}
+```
+
+响应 201：`{ "code": 0, "message": "ok", "data": { "order_id": 12 } }`
+
+### 4.8 GET /orders
+查询订单。参数：`date`、`code`、`status`、`limit`、`offset`。
+响应 data：`{ "orders": [...], "total": n }`
+
+### 4.9 GET /orders/{order_id}
+订单详情，结构同上（单条）。
 
 ### 4.7 GET /account?date=
 账户快照：总资产、可用资金、持仓市值、持仓明细。

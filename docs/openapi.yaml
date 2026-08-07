@@ -15,6 +15,8 @@ tags:
     description: 交易计划
   - name: trades
     description: 成交记录
+  - name: orders
+    description: 订单
   - name: account
     description: 账户
   - name: reports
@@ -185,6 +187,88 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /orders:
+    get:
+      tags: [orders]
+      summary: 查询订单
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [orders]
+      summary: 上报订单（执行器，幂等）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderReportRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderCreateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /orders/{order_id}:
+    get:
+      tags: [orders]
+      summary: 订单详情
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /account:
     get:
       tags: [account]
@@ -329,6 +413,115 @@ components:
               type: string
               format: date-time
               example: "2026-08-07T09:00:00+08:00"
+    OrderReportRequest:
+      type: object
+      required: [client_request_id, item_id, code, side, quantity]
+      properties:
+        client_request_id:
+          type: string
+          example: "exec-01-20260807-0001"
+        item_id:
+          type: integer
+          example: 10
+        order_id:
+          type: integer
+          nullable: true
+          example: 12
+        order_no:
+          type: string
+          example: "BK20260807123456"
+        code:
+          type: string
+          example: "600000"
+        side:
+          type: string
+          enum: [buy, sell]
+        quantity:
+          type: integer
+          example: 100
+        price:
+          type: number
+          format: double
+          example: 10.75
+        status:
+          type: string
+          example: filled
+        error:
+          type: string
+          nullable: true
+    Order:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        client_request_id:
+          type: string
+        item_id:
+          type: integer
+        order_no:
+          type: string
+        code:
+          type: string
+        side:
+          type: string
+          enum: [buy, sell]
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: double
+        status:
+          type: string
+        error:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    OrderCreateResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            order_id:
+              type: integer
+              example: 12
+    OrderListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            orders:
+              type: array
+              items:
+                $ref: "#/components/schemas/Order"
+            total:
+              type: integer
+    OrderResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          $ref: "#/components/schemas/Order"
     TradePlanItem:
       type: object
       required: [item_id, code, side, quantity]

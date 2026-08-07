@@ -1,4 +1,4 @@
-"""trade-executor v0.3 命令行入口。
+"""trade-executor v0.4 命令行入口。
 
 用法：
     # 命令行模式（拉取并执行计划）
@@ -23,7 +23,7 @@ from executor.receiver.client import BackendClient
 from executor.trader.adapters.factory import create_adapter
 from executor.trader.engine import TradingEngine
 from executor.ui.console import confirm_plan, print_plan
-from shared.models import TradeReport
+from shared.models import OrderReport, TradeReport
 
 logger = logging.getLogger("executor")
 
@@ -31,6 +31,20 @@ logger = logging.getLogger("executor")
 def _today() -> date:
     # 交易日按 Asia/Shanghai 时区计算
     return datetime.now(ZoneInfo("Asia/Shanghai")).date()
+
+
+def _order_report(config: ExecutorConfig, plan_date: date, item, result) -> OrderReport:
+    return OrderReport(
+        client_request_id=f"{config.executor_id}-{plan_date.isoformat()}-{item.item_id}",
+        item_id=item.item_id,
+        order_no=result.order_no,
+        code=item.code,
+        side=item.side,
+        quantity=item.quantity,
+        price=result.price,
+        status=result.status.value,
+        error=result.error,
+    )
 
 
 def run(config: ExecutorConfig, plan_date: date | None) -> int:
@@ -71,6 +85,11 @@ def run(config: ExecutorConfig, plan_date: date | None) -> int:
                 "error": result.error,
             }
         )
+        order_id = None
+        if item.item_id is not None:
+            order_id = client.report_order(_order_report(config, target, item, result))
+            log.record({"event": "order_reported", "code": item.code, "order_id": order_id})
+
         if result.ok and result.status.value == "filled":
             print(
                 f"[执行] {item.code} 成交 {result.filled_quantity}股 "
@@ -80,6 +99,7 @@ def run(config: ExecutorConfig, plan_date: date | None) -> int:
                 report = TradeReport(
                     client_request_id=f"{config.executor_id}-{target.isoformat()}-{item.item_id}",
                     item_id=item.item_id,
+                    order_id=order_id,
                     order_no=result.order_no,
                     code=item.code,
                     side=item.side,

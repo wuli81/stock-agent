@@ -1,4 +1,4 @@
-"""后端 API 客户端：拉取计划、上报成交、发送心跳。"""
+"""后端 API 客户端：拉取计划、上报订单与成交、发送心跳。"""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import date
 
 import httpx
 
-from shared.models import TradePlan, TradeReport
+from shared.models import OrderReport, TradePlan, TradeReport
 
 logger = logging.getLogger("executor")
 
@@ -33,6 +33,16 @@ class BackendClient:
         if not plans:
             return None
         return TradePlan(**plans[0])
+
+    def report_order(self, report: OrderReport) -> int:
+        resp = httpx.post(
+            f"{self._base}/orders",
+            json=report.model_dump(mode="json"),
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()["data"]["order_id"]
 
     def report_trade(self, report: TradeReport) -> int:
         resp = httpx.post(

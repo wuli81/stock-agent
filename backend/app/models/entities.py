@@ -130,6 +130,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    client_request_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("trade_plan_items.id"), index=True)
     order_no: Mapped[str | None] = mapped_column(String(64))
     code: Mapped[str] = mapped_column(String(16), ForeignKey("stocks.code"))

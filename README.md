@@ -208,6 +208,20 @@ python -m executor.main --ocr-check --region 100,200,400,120
 - [ ] OCR 成交确认（PaddleOCR / Tesseract）
 
 
+## v0.4：订单 / 成交状态同步
+
+执行器执行时先向后端上报订单（`POST /api/v1/orders`，幂等），成交记录关联 `order_id`，
+实现 计划项 → 订单 → 成交 的完整链路：
+
+```bash
+# 查询订单
+curl -s "$API/orders" -H "Authorization: Bearer $KEY"
+```
+
+- `orders` 表新增 `client_request_id`（唯一，幂等键），Alembic 迁移 `bf9e8f205499`；
+- 新增端点：`POST/GET /orders`、`GET /orders/{order_id}`；
+- GUI / CLI 执行时均会上报订单与成交。
+
 ## v0.3 范围
 
 - [x] OCR 成交确认子系统：Tesseract / PaddleOCR / Fake 引擎 + 成交文本解析
@@ -215,3 +229,11 @@ python -m executor.main --ocr-check --region 100,200,400,120
 - [x] `client` 适配器 dry-run 集成 OCR 状态读取
 - [ ] 真实券商控件自动化（pywinauto 控件定位，需真实环境校准）
 - [ ] 订单 / 成交状态与后端 orders 表同步
+
+
+## v0.4 范围
+
+- [x] 订单状态同步：执行器上报订单（幂等），成交关联 order_id
+- [x] 后端 /orders 接口 + orders.client_request_id 迁移
+- [x] CLI / GUI 执行链路接入订单上报
+- [ ] 订单状态回查与补单（executor 侧断点续传）

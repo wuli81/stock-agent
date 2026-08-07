@@ -36,11 +36,26 @@ class TradePlan(BaseModel):
     items: list[TradePlanItem] = Field(default_factory=list)
 
 
+class OrderReport(BaseModel):
+    """执行器上报订单的请求体（v0.4 订单状态同步）。"""
+
+    client_request_id: str
+    item_id: int
+    order_no: str | None = None
+    code: str
+    side: Side
+    quantity: int = Field(gt=0)
+    price: float | None = None
+    status: str = "pending"  # pending | submitted | partial | filled | failed | cancelled
+    error: str | None = None
+
+
 class TradeReport(BaseModel):
     """执行器上报成交的请求体。"""
 
     client_request_id: str
     item_id: int
+    order_id: int | None = None
     order_no: str | None = None
     code: str
     side: Side

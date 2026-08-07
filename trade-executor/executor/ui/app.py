@@ -32,7 +32,7 @@ from executor.receiver.client import BackendClient
 from executor.trader.adapters.base import ExecutionResult
 from executor.trader.adapters.factory import create_adapter
 from executor.trader.engine import TradingEngine
-from shared.models import TradeReport
+from shared.models import OrderReport, TradeReport
 
 logger = logging.getLogger("executor.ui")
 
@@ -78,16 +78,39 @@ class PlanWorker(QThread):
             result = engine.execute_item(item)
             ok = result.ok and result.status.value == "filled"
             self.item_done.emit(item.code, ok, result.order_no or result.error or "")
-            if ok and item.item_id is not None and result.price:
+            if item.item_id is not None:
                 self._report(client, item, result)
         self.done.emit()
 
     def _report(self, client: BackendClient, item, result: ExecutionResult) -> None:
+        order_id = None
+        order_report = OrderReport(
+            client_request_id=(
+                f"{self.config.executor_id}-{self.plan_date.isoformat()}-{item.item_id}"
+            ),
+            item_id=item.item_id,
+            order_no=result.order_no,
+            code=item.code,
+            side=item.side,
+            quantity=item.quantity,
+            price=result.price,
+            status=result.status.value,
+            error=result.error,
+        )
+        try:
+            order_id = client.report_order(order_report)
+            self.log.emit(f"已上报订单 {item.code} ({result.status.value})")
+        except Exception as exc:  # noqa: BLE001
+            self.log.emit(f"订单上报失败 {item.code}: {exc}")
+
+        if not (result.ok and result.status.value == "filled" and result.price):
+            return
         report = TradeReport(
             client_request_id=(
                 f"{self.config.executor_id}-{self.plan_date.isoformat()}-{item.item_id}"
             ),
             item_id=item.item_id,
+            order_id=order_id,
             order_no=result.order_no,
             code=item.code,
             side=item.side,
@@ -111,7 +134,7 @@ class MainWindow(QMainWindow):
         self.config = config or ExecutorConfig()
         self._worker: PlanWorker | None = None
         self._build_ui()
-        self.setWindowTitle("stock-agent 执行器 v0.2")
+        self.setWindowTitle("stock-agent 执行器 v0.4")
 
     def _build_ui(self) -> None:
         central = QWidget()
