@@ -15,6 +15,10 @@ class ExecutorConfig:
     executor_id: str = "win-01"
     retry_max: int = 3
     retry_backoff_seconds: int = 5
+    broker: str = "paper"  # demo | paper | client(实验性)
+    fill_mode: str = "mid"  # paper 撮合价：mid | min | max | fixed
+    fixed_price: float = 10.0
+    reject_codes: str = ""  # 逗号分隔的拒单股票代码
 
     @classmethod
     def load(cls, path: Path) -> ExecutorConfig:

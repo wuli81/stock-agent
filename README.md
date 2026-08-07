@@ -25,9 +25,9 @@ stock-agent/
 ├── trade-executor/   # Windows 执行器
 │   ├── executor/
 │   │   ├── receiver/     # 拉取计划
-│   │   ├── trader/       # 下单引擎 + adapters/（Demo 适配器）
+│   │   ├── trader/       # 下单引擎 + adapters/（Demo / Paper / Client）
 │   │   ├── ocr/          # 屏幕识别（占位）
-│   │   ├── ui/           # 控制台界面 / 手动确认
+│   │   ├── ui/           # PySide6 桌面界面 + 控制台
 │   │   └── logger/       # 本地日志
 │   └── tests/
 ├── shared/           # 共享层：数据结构 / 枚举 / 常量
@@ -127,6 +127,29 @@ python -m app.cli run-analysis --date 2026-08-07
 
 完整规范见 `docs/openapi.yaml` 与 `docs/REST-API-设计文档.md`。
 
+## v0.2：桌面界面与券商适配
+
+```bash
+# 安装 GUI 依赖（可选）
+pip install -e "./trade-executor[gui]"
+
+# 启动桌面界面
+cd trade-executor
+python -m executor.main --gui
+# 或直接
+python -m executor.ui.app
+```
+
+券商适配器通过 `config.toml` 的 `broker` 选择：
+
+| broker | 说明 |
+|--------|------|
+| `paper`（默认） | 纸面撮合：价格区间校验、风控拒单、部分成交，可用于测试与回测 |
+| `demo` | 简单模拟成交 |
+| `client` | pywinauto 真实客户端自动化脚手架（实验性，默认 dry-run 防误操作） |
+
+下单引擎：计划项 → 限价单（取价格区间中间价）→ 适配器撮合 → 失败自动重试。
+
 ## CI（GitHub Actions）
 
 推送 / PR 到 `main`、`master` 时自动执行（配置见 `.github/workflows/ci.yml`）：
@@ -159,3 +182,12 @@ python -m app.cli run-analysis --date 2026-08-07
 - [ ] 真实券商 GUI 自动化 / OCR
 - [x] GitHub Actions CI（lint + 测试 + 迁移校验）
 - [x] Docker 部署验证（运行时路径模拟验证；真实镜像构建需 Docker 环境）
+
+
+## v0.2 范围
+
+- [x] 券商适配器框架：Demo / Paper（模拟撮合）/ Client（pywinauto 脚手架）
+- [x] 限价单（价格区间中间价）+ 区间校验 + 风控拒单 + 部分成交
+- [x] PySide6 桌面界面（计划表格 / 拉取 / 执行 / 停止 / 日志）
+- [ ] 真实券商客户端控件自动化（需在装有券商客户端的机器上验证控件定位）
+- [ ] OCR 成交确认（PaddleOCR / Tesseract）

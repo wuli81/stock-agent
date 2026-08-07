@@ -5,3 +5,11 @@ mode = "manual"              # auto | manual
 executor_id = "win-01"
 retry_max = 3
 retry_backoff_seconds = 5
+
+# 券商适配器：demo | paper | client(实验性，pywinauto 脚手架)
+broker = "paper"
+# paper 撮合价模式：mid | min | max | fixed
+fill_mode = "mid"
+fixed_price = 10.0
+# 逗号分隔的拒单股票代码（风控示例）
+reject_codes = ""

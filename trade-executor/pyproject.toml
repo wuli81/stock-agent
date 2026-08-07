@@ -1,6 +1,6 @@
 [project]
 name = "stock-agent-executor"
-version = "0.1.0"
+version = "0.2.0"
 description = "A股自动化交易 Agent 系统 - Windows 执行器"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,7 +10,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.3"]
-gui = ["PySide6>=6.6", "pyautogui>=0.9.54", "paddleocr>=2.7"]
+gui = ["PySide6>=6.6", "pyautogui>=0.9.54", "paddleocr>=2.7", "pywinauto>=0.6.8"]
 
 [build-system]
 requires = ["setuptools>=68"]

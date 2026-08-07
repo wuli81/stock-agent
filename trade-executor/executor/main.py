@@ -1,7 +1,10 @@
-"""trade-executor v0.1 命令行入口。
+"""trade-executor v0.2 命令行入口。
 
-用法示例（Demo 模式，不连接真实券商）：
-    python -m executor.main --config config.toml --date 2026-08-08 --mode manual
+用法：
+    # 命令行模式（拉取并执行计划）
+    python -m executor.main --config config.toml --date 2026-08-10 --mode auto
+    # 桌面界面（PySide6）
+    python -m executor.main --gui
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from zoneinfo import ZoneInfo
 from executor.config import ExecutorConfig
 from executor.logger.local import LocalLogger
 from executor.receiver.client import BackendClient
+from executor.trader.adapters.factory import create_adapter
 from executor.trader.engine import TradingEngine
 from executor.ui.console import confirm_plan, print_plan
 from shared.models import TradeReport
@@ -47,7 +51,11 @@ def run(config: ExecutorConfig, plan_date: date | None) -> int:
         client.send_heartbeat(config.executor_id, "idle", "cancelled by user")
         return 1
 
-    engine = TradingEngine(retry_max=config.retry_max, backoff=config.retry_backoff_seconds)
+    engine = TradingEngine(
+        adapter=create_adapter(config),
+        retry_max=config.retry_max,
+        backoff=config.retry_backoff_seconds,
+    )
     client.send_heartbeat(config.executor_id, "running", "executing plan")
     for item in plan.items:
         result = engine.execute_item(item)
@@ -56,12 +64,16 @@ def run(config: ExecutorConfig, plan_date: date | None) -> int:
                 "event": "order_executed",
                 "code": item.code,
                 "ok": result.ok,
+                "status": result.status.value,
                 "order_no": result.order_no,
                 "error": result.error,
             }
         )
-        if result.ok:
-            print(f"[执行] {item.code} 成功 {result.order_no or ''}")
+        if result.ok and result.status.value == "filled":
+            print(
+                f"[执行] {item.code} 成交 {result.filled_quantity}股 "
+                f"@{result.price} {result.order_no or ''}"
+            )
             if item.item_id is not None and result.price:
                 report = TradeReport(
                     client_request_id=f"{config.executor_id}-{target.isoformat()}-{item.item_id}",
@@ -69,21 +81,13 @@ def run(config: ExecutorConfig, plan_date: date | None) -> int:
                     order_no=result.order_no,
                     code=item.code,
                     side=item.side,
-                    quantity=item.quantity,
+                    quantity=result.filled_quantity or item.quantity,
                     price=result.price,
                     traded_at=datetime.now(UTC),
                 )
                 client.report_trade(report)
-            else:
-                log.record(
-                    {
-                        "event": "trade_report_skipped",
-                        "code": item.code,
-                        "reason": "missing item_id or fill price",
-                    }
-                )
         else:
-            print(f"[执行] {item.code} 失败 {result.error or ''}")
+            print(f"[执行] {item.code} 失败 {result.error or result.status.value}")
     client.send_heartbeat(config.executor_id, "idle", "done")
     return 0
 
@@ -95,12 +99,17 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mode", default=None, choices=["auto", "manual"], help="覆盖配置中的执行模式"
     )
+    parser.add_argument("--gui", action="store_true", help="启动 PySide6 桌面界面")
     return parser.parse_args()
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     args = _parse_args()
+    if args.gui:
+        from executor.ui.app import run_gui
+
+        return run_gui(args.config)
     config = ExecutorConfig.load(Path(args.config))
     if args.mode:
         config.mode = args.mode

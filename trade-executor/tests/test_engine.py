@@ -1,4 +1,4 @@
-from executor.trader.adapters.base import ExecutionResult, Order
+from executor.trader.adapters.base import ExecutionResult, FillStatus, Order
 from executor.trader.adapters.demo import DemoAdapter
 from executor.trader.engine import TradingEngine
 
@@ -11,14 +11,18 @@ def test_demo_adapter_executes():
     item = TradePlanItem(code="600000", side=Side.BUY, quantity=100)
     result = engine.execute_item(item)
     assert result.ok
+    assert result.status == FillStatus.FILLED
     assert result.order_no and result.order_no.startswith("DEMO-")
     assert result.price == 10.0
 
 
 def test_demo_adapter_uses_order_price():
     adapter = DemoAdapter()
-    result = adapter.place_order(Order(code="600000", side="buy", quantity=100, price=12.5))
+    result = adapter.place_order(
+        Order(code="600000", side=Side.BUY, quantity=100, price=12.5)
+    )
     assert result.price == 12.5
+    assert result.status == FillStatus.FILLED
 
 
 class FlakyAdapter(DemoAdapter):
@@ -37,7 +41,9 @@ class FlakyAdapter(DemoAdapter):
 def test_engine_retries_then_succeeds():
     adapter = FlakyAdapter(fail_times=2)
     engine = TradingEngine(adapter=adapter, retry_max=3, backoff=0)
-    result = engine.execute_item(TradePlanItem(code="600000", side=Side.BUY, quantity=100))
+    result = engine.execute_item(
+        TradePlanItem(code="600000", side=Side.BUY, quantity=100)
+    )
     assert result.ok
     assert adapter._calls == 3
 
@@ -45,6 +51,8 @@ def test_engine_retries_then_succeeds():
 def test_engine_gives_up_after_retries():
     adapter = FlakyAdapter(fail_times=99)
     engine = TradingEngine(adapter=adapter, retry_max=3, backoff=0)
-    result = engine.execute_item(TradePlanItem(code="600000", side=Side.BUY, quantity=100))
+    result = engine.execute_item(
+        TradePlanItem(code="600000", side=Side.BUY, quantity=100)
+    )
     assert not result.ok
     assert adapter._calls == 3

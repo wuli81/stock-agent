@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import uuid
 
-from executor.trader.adapters.base import BrokerAdapter, ExecutionResult, Order
+from executor.trader.adapters.base import (
+    BrokerAdapter,
+    ExecutionResult,
+    FillStatus,
+    Order,
+)
 
 
 class DemoAdapter(BrokerAdapter):
     """模拟成交价默认 10.0，可用 default_price 覆盖。"""
+
+    name = "demo"
 
     def __init__(self, default_price: float = 10.0):
         self.default_price = default_price
@@ -19,4 +26,10 @@ class DemoAdapter(BrokerAdapter):
     def place_order(self, order: Order) -> ExecutionResult:
         order_no = f"DEMO-{uuid.uuid4().hex[:12].upper()}"
         price = order.price if order.price else self.default_price
-        return ExecutionResult(ok=True, order_no=order_no, price=price)
+        return ExecutionResult(
+            ok=True,
+            status=FillStatus.FILLED,
+            order_no=order_no,
+            price=price,
+            filled_quantity=order.quantity,
+        )
