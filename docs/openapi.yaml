@@ -1,0 +1,652 @@
+openapi: 3.0.3
+info:
+  title: stock-agent REST API
+  description: A 股自动化交易 Agent 系统后端 API（v0.1）
+  version: 0.1.0
+servers:
+  - url: http://localhost:8000/api/v1
+    description: 本地开发
+  - url: https://api.stock-agent.example.com/api/v1
+    description: 生产环境
+tags:
+  - name: system
+    description: 系统
+  - name: trade-plans
+    description: 交易计划
+  - name: trades
+    description: 成交记录
+  - name: account
+    description: 账户
+  - name: reports
+    description: 每日报告
+  - name: strategies
+    description: 策略
+  - name: executor
+    description: 执行器
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [system]
+      summary: 健康检查
+      security: []
+      responses:
+        "200":
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /trade-plans:
+    get:
+      tags: [trade-plans]
+      summary: 查询某日交易计划
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: 计划日期 YYYY-MM-DD
+          schema:
+            type: string
+            example: "2026-08-07"
+        - name: status
+          in: query
+          required: false
+          description: 计划状态
+          schema:
+            type: string
+            enum: [draft, published, executing, done, cancelled]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradePlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /trade-plans/{plan_id}:
+    get:
+      tags: [trade-plans]
+      summary: 交易计划详情
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradePlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /trades:
+    get:
+      tags: [trades]
+      summary: 查询成交记录
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: 成交日期 YYYY-MM-DD
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: false
+          description: 股票代码
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [trades]
+      summary: 上报成交（执行器）
+      description: 使用 client_request_id 保证幂等，重复提交返回同一 trade_id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeReportRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeCreateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /trades/{trade_id}:
+    get:
+      tags: [trades]
+      summary: 成交详情
+      parameters:
+        - name: trade_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /account:
+    get:
+      tags: [account]
+      summary: 账户与持仓快照
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: 快照日期 YYYY-MM-DD，默认最近一天
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /daily-reports/{report_date}:
+    get:
+      tags: [reports]
+      summary: 每日报告
+      parameters:
+        - name: report_date
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2026-08-07"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReportResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /strategies:
+    get:
+      tags: [strategies]
+      summary: 策略列表
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StrategyListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /executor/heartbeat:
+    post:
+      tags: [executor]
+      summary: 执行器心跳
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeartbeatResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: api-key
+  responses:
+    Unauthorized:
+      description: 鉴权失败
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: 冲突（重复上报 / 计划不可执行）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: 业务错误码
+          example: 1002
+        message:
+          type: string
+          example: 参数错误
+        data:
+          nullable: true
+    HealthResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: ok
+            version:
+              type: string
+              example: 0.1.0
+            time:
+              type: string
+              format: date-time
+              example: "2026-08-07T09:00:00+08:00"
+    TradePlanItem:
+      type: object
+      required: [item_id, code, side, quantity]
+      properties:
+        item_id:
+          type: integer
+        code:
+          type: string
+          example: "600000"
+        name:
+          type: string
+          example: 浦发银行
+        side:
+          type: string
+          enum: [buy, sell]
+        quantity:
+          type: integer
+          example: 100
+        price_min:
+          type: number
+          format: double
+          example: 10.5
+        price_max:
+          type: number
+          format: double
+          example: 11.0
+        expire_at:
+          type: string
+          format: date-time
+          example: "2026-08-08T09:35:00+08:00"
+        status:
+          type: string
+          example: pending
+        reason:
+          type: string
+          example: 均线多头排列
+    TradePlan:
+      type: object
+      required: [plan_id, plan_date, status]
+      properties:
+        plan_id:
+          type: integer
+        plan_date:
+          type: string
+          example: "2026-08-07"
+        status:
+          type: string
+          enum: [draft, published, executing, done, cancelled]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TradePlanItem"
+    TradePlanListResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            plans:
+              type: array
+              items:
+                $ref: "#/components/schemas/TradePlan"
+            total:
+              type: integer
+              example: 1
+    TradePlanResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          $ref: "#/components/schemas/TradePlan"
+    TradeReportRequest:
+      type: object
+      required: [client_request_id, item_id, code, side, quantity, price, traded_at]
+      properties:
+        client_request_id:
+          type: string
+          example: "exec-01-20260807-0001"
+        item_id:
+          type: integer
+          example: 10
+        order_no:
+          type: string
+          example: "BK20260807123456"
+        code:
+          type: string
+          example: "600000"
+        side:
+          type: string
+          enum: [buy, sell]
+        quantity:
+          type: integer
+          example: 100
+        price:
+          type: number
+          format: double
+          example: 10.62
+        traded_at:
+          type: string
+          format: date-time
+          example: "2026-08-08T09:31:05+08:00"
+        commission:
+          type: number
+          format: double
+          example: 5.0
+    Trade:
+      type: object
+      properties:
+        trade_id:
+          type: integer
+        order_id:
+          type: integer
+        client_request_id:
+          type: string
+        code:
+          type: string
+        side:
+          type: string
+          enum: [buy, sell]
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: double
+        amount:
+          type: number
+          format: double
+        commission:
+          type: number
+          format: double
+        traded_at:
+          type: string
+          format: date-time
+    TradeCreateResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            trade_id:
+              type: integer
+              example: 88
+    TradeListResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            trades:
+              type: array
+              items:
+                $ref: "#/components/schemas/Trade"
+            total:
+              type: integer
+    TradeResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          $ref: "#/components/schemas/Trade"
+    AccountSnapshot:
+      type: object
+      properties:
+        snapshot_date:
+          type: string
+          example: "2026-08-07"
+        total_asset:
+          type: number
+          format: double
+        available_cash:
+          type: number
+          format: double
+        market_value:
+          type: number
+          format: double
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              quantity:
+                type: integer
+              cost_price:
+                type: number
+                format: double
+              market_price:
+                type: number
+                format: double
+    AccountResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          $ref: "#/components/schemas/AccountSnapshot"
+    DailyReport:
+      type: object
+      properties:
+        report_date:
+          type: string
+          example: "2026-08-07"
+        summary:
+          type: object
+          description: 每日报告摘要（计划数、成交数、盈亏、异常等）
+        created_at:
+          type: string
+          format: date-time
+    DailyReportResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          $ref: "#/components/schemas/DailyReport"
+    Strategy:
+      type: object
+      properties:
+        strategy_id:
+          type: integer
+        name:
+          type: string
+          example: ma_cross
+        version:
+          type: string
+          example: "0.1.0"
+        enabled:
+          type: boolean
+          example: true
+    StrategyListResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            strategies:
+              type: array
+              items:
+                $ref: "#/components/schemas/Strategy"
+            total:
+              type: integer
+    HeartbeatRequest:
+      type: object
+      required: [executor_id, status]
+      properties:
+        executor_id:
+          type: string
+          example: "win-01"
+        status:
+          type: string
+          enum: [idle, running, error]
+        message:
+          type: string
+          example: ""
+    HeartbeatResponse:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          type: object
+          properties:
+            accepted:
+              type: boolean
+              example: true

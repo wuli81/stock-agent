@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./shared
+          pip install -e "./backend[dev]"
+          pip install -e "./trade-executor[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Test backend
+        working-directory: backend
+        run: pytest -v
+
+      - name: Test trade-executor
+        working-directory: trade-executor
+        run: pytest -v
+
+      - name: Verify migrations (fresh DB + model consistency)
+        working-directory: backend
+        run: |
+          mkdir -p data
+          alembic upgrade head
+          alembic check

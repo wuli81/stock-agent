@@ -1,0 +1,16 @@
+{
+  "plan_date": "2026-08-07",
+  "status": "published",
+  "items": [
+    {
+      "item_id": 10,
+      "code": "600000",
+      "side": "buy",
+      "quantity": 100,
+      "price_min": 10.5,
+      "price_max": 11.0,
+      "expire_at": "2026-08-08T09:35:00+08:00",
+      "reason": "MA5上穿MA20"
+    }
+  ]
+}

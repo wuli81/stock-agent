@@ -1,0 +1,23 @@
+[project]
+name = "stock-agent-executor"
+version = "0.1.0"
+description = "A股自动化交易 Agent 系统 - Windows 执行器"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.3"]
+gui = ["PySide6>=6.6", "pyautogui>=0.9.54", "paddleocr>=2.7"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["executor*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

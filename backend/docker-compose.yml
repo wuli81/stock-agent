@@ -1,0 +1,19 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: stock-agent-api
+    ports:
+      - "8000:8000"
+    environment:
+      STOCK_AGENT_DATABASE_URL: sqlite:////data/stock_agent.db
+      STOCK_AGENT_API_KEYS: dev-key
+      STOCK_AGENT_ENABLE_SCHEDULER: "true"
+      STOCK_AGENT_LOG_LEVEL: INFO
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+
+volumes:
+  db_data:

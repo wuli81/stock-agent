@@ -1,0 +1,7 @@
+# trade-executor 配置示例：复制为 config.toml 后修改
+backend_base_url = "http://localhost:8000/api/v1"
+api_key = "dev-key"
+mode = "manual"              # auto | manual
+executor_id = "win-01"
+retry_max = 3
+retry_backoff_seconds = 5
