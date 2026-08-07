@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.3"]
+dev = ["pytest>=8.0", "ruff>=0.3", "pandas>=2.0"]
 data = ["akshare>=1.14"]
 
 [build-system]
