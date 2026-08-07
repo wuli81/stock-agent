@@ -184,6 +184,21 @@ python -m executor.ui.app
 - [x] Docker 部署验证（运行时路径模拟验证；真实镜像构建需 Docker 环境）
 
 
+## v0.3：OCR 成交确认
+
+```bash
+# 安装 OCR 依赖（二选一；Tesseract 还需在系统安装 Tesseract 引擎）
+pip install pytesseract      # 或 pip install paddleocr
+
+# 试识别：截取券商界面区域并解析成交结果
+cd trade-executor
+python -m executor.main --ocr-check --region 100,200,400,120
+```
+
+- 引擎：`ocr_engine = "tesseract" | "paddle" | "fake"`（config.toml）；
+- 解析器：OCR 文本 → 成交状态（全部成交 / 部分成交 / 废单 / 未成交）+ 数量 + 价格；
+- `client` 适配器 dry-run 模式可结合 OCR 读取交易软件当前界面状态（默认不点击、不下单）。
+
 ## v0.2 范围
 
 - [x] 券商适配器框架：Demo / Paper（模拟撮合）/ Client（pywinauto 脚手架）
@@ -191,3 +206,12 @@ python -m executor.ui.app
 - [x] PySide6 桌面界面（计划表格 / 拉取 / 执行 / 停止 / 日志）
 - [ ] 真实券商客户端控件自动化（需在装有券商客户端的机器上验证控件定位）
 - [ ] OCR 成交确认（PaddleOCR / Tesseract）
+
+
+## v0.3 范围
+
+- [x] OCR 成交确认子系统：Tesseract / PaddleOCR / Fake 引擎 + 成交文本解析
+- [x] 屏幕区域截图 + `--ocr-check` 试识别 CLI
+- [x] `client` 适配器 dry-run 集成 OCR 状态读取
+- [ ] 真实券商控件自动化（pywinauto 控件定位，需真实环境校准）
+- [ ] 订单 / 成交状态与后端 orders 表同步

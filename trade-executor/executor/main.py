@@ -1,10 +1,12 @@
-"""trade-executor v0.2 命令行入口。
+"""trade-executor v0.3 命令行入口。
 
 用法：
     # 命令行模式（拉取并执行计划）
     python -m executor.main --config config.toml --date 2026-08-10 --mode auto
     # 桌面界面（PySide6）
     python -m executor.main --gui
+    # OCR 试识别（截图区域 -> 识别 -> 解析成交结果）
+    python -m executor.main --ocr-check --region 100,200,400,120
 """
 
 from __future__ import annotations
@@ -100,17 +102,27 @@ def _parse_args() -> argparse.Namespace:
         "--mode", default=None, choices=["auto", "manual"], help="覆盖配置中的执行模式"
     )
     parser.add_argument("--gui", action="store_true", help="启动 PySide6 桌面界面")
+    parser.add_argument(
+        "--ocr-check", action="store_true", help="OCR 试识别：截取区域并解析成交结果"
+    )
+    parser.add_argument(
+        "--region", default=None, help="截图区域 left,top,width,height（OCR 用）"
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     args = _parse_args()
+    config = ExecutorConfig.load(Path(args.config))
+    if args.ocr_check:
+        from executor.ocr import run_ocr_check
+
+        return run_ocr_check(config, args.region)
     if args.gui:
         from executor.ui.app import run_gui
 
         return run_gui(args.config)
-    config = ExecutorConfig.load(Path(args.config))
     if args.mode:
         config.mode = args.mode
     plan_date = date.fromisoformat(args.date) if args.date else None

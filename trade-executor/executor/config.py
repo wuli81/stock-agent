@@ -19,6 +19,8 @@ class ExecutorConfig:
     fill_mode: str = "mid"  # paper 撮合价：mid | min | max | fixed
     fixed_price: float = 10.0
     reject_codes: str = ""  # 逗号分隔的拒单股票代码
+    ocr_engine: str = ""  # tesseract | paddle | fake（空 = 关闭）
+    ocr_region: str = ""  # "left,top,width,height"
 
     @classmethod
     def load(cls, path: Path) -> ExecutorConfig:

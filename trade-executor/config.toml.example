@@ -13,3 +13,8 @@ fill_mode = "mid"
 fixed_price = 10.0
 # 逗号分隔的拒单股票代码（风控示例）
 reject_codes = ""
+
+# OCR 成交确认（v0.3）：tesseract | paddle | fake；空 = 关闭
+ocr_engine = ""
+# 截图区域 "left,top,width,height"
+ocr_region = ""

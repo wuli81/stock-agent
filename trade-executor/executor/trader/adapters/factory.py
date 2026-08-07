@@ -24,7 +24,10 @@ def create_adapter(config: ExecutorConfig) -> BrokerAdapter:
             )
         )
     if name in ("client", "pywinauto"):
+        from executor.ocr import create_ocr_engine, parse_region
         from executor.trader.adapters.client import ClientAutomationAdapter
 
-        return ClientAutomationAdapter()
+        ocr_engine = create_ocr_engine(config.ocr_engine) if config.ocr_engine else None
+        ocr_region = parse_region(config.ocr_region) if config.ocr_region else None
+        return ClientAutomationAdapter(ocr_engine=ocr_engine, ocr_region=ocr_region)
     raise ValueError(f"unknown broker: {config.broker}")
