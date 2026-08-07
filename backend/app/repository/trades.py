@@ -20,6 +20,7 @@ def get_trade(db: Session, trade_id: int) -> Trade | None:
 def save_trade(db: Session, report: TradeReport) -> Trade:
     trade = Trade(
         client_request_id=report.client_request_id,
+        order_id=report.order_id,
         item_id=report.item_id,
         order_no=report.order_no,
         code=report.code,
