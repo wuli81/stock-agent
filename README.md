@@ -1,12 +1,38 @@
 # stock-agent
 
-A 股自动化交易 Agent 系统（v1.0）
+面向 A 股的开源量化研究、策略生成与自动化交易 Agent 框架（当前开发版本：v0.4）
 
 [![CI](https://github.com/wuli81/stock-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/wuli81/stock-agent/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](backend/pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 > ⚠️ 仅供学习研究，不构成投资建议；实盘使用请自行评估风险并遵守当地法律法规。
+
+## Why stock-agent?
+
+stock-agent 将行情数据、策略插件、交易计划、REST API 与 Windows 执行器拆分为可替换模块，目标是为 AI 辅助量化研究和自动化交易实验提供可复现、可扩展的开源基础设施。默认提供 Paper / Demo 模式；真实客户端自动化仍处于实验阶段。
+
+## 架构
+
+```mermaid
+flowchart LR
+    D[Market Data / akshare] --> B[FastAPI Backend]
+    B --> S[Strategy Plugins]
+    S --> P[Trade Planner]
+    P --> API[REST API]
+    API --> E[Windows Trade Executor]
+    E --> R[Risk Checks]
+    R --> A[Paper / Demo / Client Adapter]
+    E --> O[OCR Confirmation]
+    E --> API
+```
+
+核心设计原则是让数据源、策略和券商适配器可以独立替换，同时保留订单、成交和报告的可追踪链路。
+
+## Open-source participation
+
+欢迎提交 bug、文档改进、新数据源、策略插件和 broker adapter。开始贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请避免公开提交敏感账户信息或密钥。
+
 
 ## 项目结构
 
